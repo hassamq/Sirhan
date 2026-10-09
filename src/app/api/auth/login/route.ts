@@ -43,6 +43,10 @@ export async function POST(request: Request) {
       return jsonError(error.issues[0]?.message || "Invalid payload");
     }
     console.error(error);
+    const message = error instanceof Error ? error.message : "Login failed";
+    if (/MONGODB_URI|ENOTFOUND|ECONNREFUSED|authentication failed|bad auth|MongoServerSelectionError|querySrv/i.test(message)) {
+      return jsonError(`MongoDB connection failed: ${message}`, 500);
+    }
     return jsonError("Login failed", 500);
   }
 }

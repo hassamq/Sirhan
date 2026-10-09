@@ -38,7 +38,11 @@ export async function api<T>(
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.error || `Request failed (${res.status})`);
+    const hint =
+      res.status === 0
+        ? " Network/CORS blocked — set ADMIN_ORIGIN on the website project to your admin Vercel URL."
+        : "";
+    throw new Error((data.error || `Request failed (${res.status})`) + hint);
   }
   return data as T;
 }
