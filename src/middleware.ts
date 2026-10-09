@@ -7,6 +7,7 @@ function allowedOrigins() {
     process.env.ADMIN_ORIGINS,
     "http://localhost:3001",
     "http://127.0.0.1:3001",
+    "https://sirhan-wcmd.vercel.app",
   ]
     .filter(Boolean)
     .flatMap((value) => String(value).split(","))
@@ -16,16 +17,29 @@ function allowedOrigins() {
   return Array.from(new Set(fromEnv));
 }
 
+function isTrustedAdminOrigin(origin: string) {
+  if (allowedOrigins().includes(origin)) return true;
+  // Allow Sirhan admin deployments / previews on Vercel
+  try {
+    const host = new URL(origin).hostname;
+    return (
+      host === "sirhan-wcmd.vercel.app" ||
+      /^sirhan.*-.*\.vercel\.app$/i.test(host) ||
+      /^sirhan-wcmd-.*\.vercel\.app$/i.test(host)
+    );
+  } catch {
+    return false;
+  }
+}
+
 function resolveOrigin(request: NextRequest) {
   const requestOrigin = request.headers.get("origin");
-  const allowed = allowedOrigins();
-
-  if (requestOrigin && allowed.includes(requestOrigin)) {
+  if (requestOrigin && isTrustedAdminOrigin(requestOrigin)) {
     return requestOrigin;
   }
 
   // Fallback for same-origin API calls / tools without Origin
-  return allowed[0] || "*";
+  return allowedOrigins()[0] || "*";
 }
 
 function corsHeaders(origin: string) {
